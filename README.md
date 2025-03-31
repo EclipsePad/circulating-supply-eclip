@@ -27,7 +27,7 @@ npm install
 ```bash
 zip -r function.zip index.js node_modules
 ```
-(On Windows, you can use 7-Zip or other zip utilities)
+(On Windows, you can use PowerShell: `Compress-Archive -Path index.js, node_modules -DestinationPath function.zip -Force`)
 
 3. Deploy to AWS Lambda:
    - Go to AWS Lambda console
@@ -40,10 +40,17 @@ zip -r function.zip index.js node_modules
    - Set timeout to 30 seconds
    - Create or assign an appropriate IAM role with basic Lambda execution permissions
 
-4. Create API Gateway trigger:
+4. Create public endpoint (two options):
+
+   **Option A: Function URL (Recommended)**
+   - Go to Configuration -> Function URL
+   - Enable Function URL with Auth type = NONE
+   - Save the generated URL (format: https://[id].lambda-url.[region].on.aws/)
+
+   **Option B: API Gateway**
    - In the Lambda function console, add API Gateway trigger
    - Create a new API or use an existing one
-   - Configure as REST API with open access (or secure as needed)
+   - Configure as REST API with open access
    - Deploy the API
 
 ### CloudFormation Deployment
@@ -56,10 +63,14 @@ aws cloudformation deploy --template-file template.yml --stack-name eclip-circul
 
 ## API Usage
 
-Once deployed, the API will be available at the provided API Gateway URL:
+Once deployed, the API will be available at the provided Function URL or API Gateway URL:
 
 ```
-GET https://your-api-id.execute-api.your-region.amazonaws.com/prod/circulating-supply
+GET https://[your-function-url].lambda-url.[region].on.aws/
+```
+or
+```
+GET https://[your-api-id].execute-api.[region].amazonaws.com/prod/circulating-supply
 ```
 
 Response format:
