@@ -41,29 +41,24 @@ Resources:
                       }
                   }
                   
-                  // Prepare response
+                  // Return just the number as plain text
                   if (circulatingSupply !== null) {
                       return {
                           statusCode: 200,
                           headers: {
-                              'Content-Type': 'application/json',
+                              'Content-Type': 'text/plain',
                               'Access-Control-Allow-Origin': '*' // Enable CORS
                           },
-                          body: JSON.stringify({
-                              date: formattedDate,
-                              circulatingSupply: circulatingSupply
-                          })
+                          body: String(circulatingSupply)
                       };
                   } else {
                       return {
                           statusCode: 404,
                           headers: {
-                              'Content-Type': 'application/json',
+                              'Content-Type': 'text/plain',
                               'Access-Control-Allow-Origin': '*'
                           },
-                          body: JSON.stringify({
-                              error: `No circulating supply data found for date: ${formattedDate}`
-                          })
+                          body: '0'  // Return 0 if no data found for today
                       };
                   }
               } catch (error) {
@@ -71,13 +66,10 @@ Resources:
                   return {
                       statusCode: 500,
                       headers: {
-                          'Content-Type': 'application/json',
+                          'Content-Type': 'text/plain',
                           'Access-Control-Allow-Origin': '*'
                       },
-                      body: JSON.stringify({
-                          error: 'Failed to retrieve circulating supply data',
-                          details: error.message
-                      })
+                      body: '0'  // Return 0 on error
                   };
               }
           };

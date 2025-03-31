@@ -5,7 +5,7 @@ const axios = require('axios');
  * 
  * @param {Object} event - Lambda event object
  * @param {Object} context - Lambda context object
- * @returns {Object} Response with circulating supply for today's date
+ * @returns {Object} Response with circulating supply for today's date as a plain number
  */
 exports.handler = async (event, context) => {
     try {
@@ -33,29 +33,24 @@ exports.handler = async (event, context) => {
             }
         }
         
-        // Prepare response
+        // Return just the number as plain text
         if (circulatingSupply !== null) {
             return {
                 statusCode: 200,
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'text/plain',
                     'Access-Control-Allow-Origin': '*' // Enable CORS
                 },
-                body: JSON.stringify({
-                    date: formattedDate,
-                    circulatingSupply: circulatingSupply
-                })
+                body: String(circulatingSupply)
             };
         } else {
             return {
                 statusCode: 404,
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'text/plain',
                     'Access-Control-Allow-Origin': '*'
                 },
-                body: JSON.stringify({
-                    error: `No circulating supply data found for date: ${formattedDate}`
-                })
+                body: '0'  // Return 0 if no data found for today
             };
         }
     } catch (error) {
@@ -63,13 +58,10 @@ exports.handler = async (event, context) => {
         return {
             statusCode: 500,
             headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'text/plain',
                 'Access-Control-Allow-Origin': '*'
             },
-            body: JSON.stringify({
-                error: 'Failed to retrieve circulating supply data',
-                details: error.message
-            })
+            body: '0'  // Return 0 on error
         };
     }
 };

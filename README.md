@@ -7,7 +7,7 @@ A simple AWS Lambda function that polls a Google Sheets URL and returns the circ
 This service:
 1. Accesses a CSV from Google Sheets containing circulating supply data
 2. Uses today's date (YYYY-MM-DD) to look up the associated row
-3. Returns the circulating supply number for that date
+3. Returns the circulating supply number for that date as a plain number
 
 ## Deployment Instructions
 
@@ -63,14 +63,13 @@ GET https://your-api-id.execute-api.your-region.amazonaws.com/prod/circulating-s
 ```
 
 Response format:
-```json
-{
-  "date": "2024-04-01",
-  "circulatingSupply": 23169989.805229
-}
 ```
+23169989.805229
+```
+
+The response is a plain number with no formatting or JSON wrapper.
 
 ## Error Handling
 
-- 404: No data found for the current date
-- 500: Server error (check CloudWatch logs)
+- If no data is found for the current date: Returns `0`
+- If there's a server error: Returns `0`

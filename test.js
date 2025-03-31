@@ -10,19 +10,16 @@ async function testLambdaFunction() {
     // Call the Lambda handler function
     const result = await handler({}, {});
     
-    // Parse the response body
-    const body = JSON.parse(result.body);
-    
     // Log the results
     console.log('Status Code:', result.statusCode);
-    console.log('Response Body:', body);
+    console.log('Content-Type:', result.headers['Content-Type']);
+    console.log('Response Body:', result.body);
     
     if (result.statusCode === 200) {
-      console.log('\nSuccess! Found circulating supply for date:', body.date);
-      console.log('Circulating Supply:', body.circulatingSupply);
+      console.log('\nSuccess! Found circulating supply:', result.body);
     } else {
       console.log('\nNo data found or error occurred.');
-      console.log('Error:', body.error);
+      console.log('Response:', result.body);
     }
   } catch (error) {
     console.error('Test failed with error:', error);
