@@ -1,0 +1,29 @@
+{
+  "name": "eclip-circulating-supply",
+  "version": "1.0.0",
+  "description": "AWS Lambda function to fetch ECLIP circulating supply from Google Sheets",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "package": "zip -r function.zip index.js node_modules"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EclipsePad/circulating-supply-eclip.git"
+  },
+  "keywords": [
+    "aws",
+    "lambda",
+    "cryptocurrency",
+    "circulating-supply"
+  ],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/EclipsePad/circulating-supply-eclip/issues"
+  },
+  "homepage": "https://github.com/EclipsePad/circulating-supply-eclip#readme",
+  "dependencies": {
+    "axios": "^1.6.2"
+  }
+}

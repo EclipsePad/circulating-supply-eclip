@@ -1,0 +1,141 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation template for ECLIP Circulating Supply Lambda function'
+
+Resources:
+  EclipCirculatingSupplyFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: eclip-circulating-supply
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Runtime: nodejs18.x
+      Timeout: 30
+      MemorySize: 128
+      Code:
+        ZipFile: |
+          const axios = require('axios');
+
+          exports.handler = async (event, context) => {
+              try {
+                  // Google Sheets CSV URL
+                  const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRsmzTPDa6o1JNNuW72glwLsK_frXCN7wTknmA_Axu1SciGQOyXKpLepN7bYExQjnobXwE3JvAKfvmU/pub?gid=807430550&single=true&output=csv';
+                  
+                  // Fetch CSV data
+                  const response = await axios.get(csvUrl);
+                  const csvData = response.data;
+                  
+                  // Parse CSV data (simple parsing since format is straightforward)
+                  const rows = csvData.split('\n').map(row => row.trim()).filter(row => row);
+                  
+                  // Get today's date in YYYY-MM-DD format
+                  const today = new Date();
+                  const formattedDate = today.toISOString().split('T')[0]; // YYYY-MM-DD
+                  
+                  // Find the row with today's date
+                  let circulatingSupply = null;
+                  for (const row of rows) {
+                      const [date, supply] = row.split(',');
+                      if (date === formattedDate) {
+                          circulatingSupply = parseFloat(supply);
+                          break;
+                      }
+                  }
+                  
+                  // Prepare response
+                  if (circulatingSupply !== null) {
+                      return {
+                          statusCode: 200,
+                          headers: {
+                              'Content-Type': 'application/json',
+                              'Access-Control-Allow-Origin': '*' // Enable CORS
+                          },
+                          body: JSON.stringify({
+                              date: formattedDate,
+                              circulatingSupply: circulatingSupply
+                          })
+                      };
+                  } else {
+                      return {
+                          statusCode: 404,
+                          headers: {
+                              'Content-Type': 'application/json',
+                              'Access-Control-Allow-Origin': '*'
+                          },
+                          body: JSON.stringify({
+                              error: `No circulating supply data found for date: ${formattedDate}`
+                          })
+                      };
+                  }
+              } catch (error) {
+                  console.error('Error:', error);
+                  return {
+                      statusCode: 500,
+                      headers: {
+                          'Content-Type': 'application/json',
+                          'Access-Control-Allow-Origin': '*'
+                      },
+                      body: JSON.stringify({
+                          error: 'Failed to retrieve circulating supply data',
+                          details: error.message
+                      })
+                  };
+              }
+          };
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  ApiGateway:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: EclipCirculatingSupplyApi
+      Description: API for ECLIP Circulating Supply
+
+  ApiGatewayResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ParentId: !GetAtt ApiGateway.RootResourceId
+      PathPart: 'circulating-supply'
+
+  ApiGatewayMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref ApiGatewayResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${EclipCirculatingSupplyFunction.Arn}/invocations
+
+  ApiGatewayDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn: ApiGatewayMethod
+    Properties:
+      RestApiId: !Ref ApiGateway
+      StageName: prod
+
+  LambdaApiGatewayPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref EclipCirculatingSupplyFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGateway}/*/GET/circulating-supply
+
+Outputs:
+  ApiEndpoint:
+    Description: URL of the API endpoint
+    Value: !Sub https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/prod/circulating-supply
